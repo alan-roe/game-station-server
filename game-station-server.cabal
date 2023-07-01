@@ -1,0 +1,45 @@
+cabal-version:      2.4
+name:               game-station-server
+version:            0.1.0.0
+
+-- A short (one-line) description of the package.
+-- synopsis:
+
+-- A longer description of the package.
+-- description:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+
+-- The license under which the package is released.
+-- license:
+
+-- The package author(s).
+author: Alan Roe
+
+-- An email address to which users can send suggestions, bug reports, and patches.
+-- maintainer:
+
+-- A copyright notice.
+-- copyright:
+-- category:
+extra-source-files: CHANGELOG.md
+
+executable game-station-server
+    main-is:          Main.hs
+    ghc-options:      -threaded
+    -- Modules included in this executable, other than Main.
+    other-modules: Mqtt, Telegram, Time
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:
+      base,
+      bytestring, text,
+      net-mqtt,
+      network-uri,
+      telegram-bot-api, telegram-bot-simple,
+      stm, time,
+      dotenv
+    hs-source-dirs:   app
+    default-language: Haskell2010
