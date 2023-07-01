@@ -1,0 +1,38 @@
+name: Haskell CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('**/*.cabal') }}
+
+    - name: Build Snapshot
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        stack --no-terminal test --bench --only-snapshot
+
+    - name: Build & Test
+      run: |
+        stack --no-terminal test --bench --no-run-benchmarks --haddock --no-haddock-deps
+        stack install
+        cp $HOME/.local/bin/game-station-server .
+
+    - name: Store Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: game-station-server-${{ runner.os }}
+        path: game-station-server

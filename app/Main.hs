@@ -5,6 +5,7 @@ module Main where
 
 import Configuration.Dotenv (defaultConfig, loadFile)
 import Control.Concurrent (forkIO, newChan, readChan, threadDelay)
+import Control.Exception (catch)
 import Control.Monad (forever)
 import Mqtt (startMQTT)
 import Telegram (run)
@@ -12,7 +13,7 @@ import Telegram (run)
 main :: IO ()
 main = do
   putStrLn "Game Station Server"
-  loadFile defaultConfig
+  catch (loadFile defaultConfig) (\(_ :: IOError) -> putStrLn "no .env file found")
   subMsg <- newChan
 
   -- Start MQTT client, retrieving the function to publish messages
