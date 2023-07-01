@@ -3,25 +3,12 @@
 
 module Telegram where
 
-import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
-import Data.Maybe (isJust)
-import Data.Text
+import Data.Text (Text, pack)
 import System.Environment (getEnv)
 import Telegram.Bot.API
-import Telegram.Bot.API.InlineMode.InlineQueryResult
-  ( InlineQueryResultGeneric
-      ( inlineQueryResultInputMessageContent,
-        inlineQueryResultTitle
-      ),
-    InlineQueryResultId (InlineQueryResultId),
-    defInlineQueryResultArticle,
-    defInlineQueryResultGeneric,
-    defInlineQueryResultGenericThumbnail,
-  )
-import Telegram.Bot.API.InlineMode.InputMessageContent (defaultInputTextMessageContent)
 import Telegram.Bot.Simple
-import Telegram.Bot.Simple.UpdateParser (updateMessageSticker, updateMessageText)
+import Telegram.Bot.Simple.UpdateParser (updateMessageText)
 import Time qualified
 
 newtype Model = Model
@@ -29,8 +16,7 @@ newtype Model = Model
   }
 
 data Action
-  = InlineEcho InlineQueryId Text
-  | Publish Text
+  = Publish Text
   | Relay Text
 
 relayBot :: Model -> BotApp Model Action
@@ -43,30 +29,13 @@ relayBot model =
     }
 
 updateToAction :: Update -> Model -> Maybe Action
-updateToAction update _
-  | isJust $ updateInlineQuery update = do
-      query <- updateInlineQuery update
-      let queryId = inlineQueryId query
-      let msg = inlineQueryQuery query
-      Just $ InlineEcho queryId msg
-  | otherwise = case updateMessageText update of
-      Just text -> Just (Publish text)
-      Nothing -> Nothing
+updateToAction update _ =
+  case updateMessageText update of
+    Just text -> Just (Publish text)
+    Nothing -> Nothing
 
 handleAction :: Action -> Model -> Eff Action Model
 handleAction action model = case action of
-  InlineEcho queryId msg ->
-    model <# do
-      let result =
-            (defInlineQueryResultGeneric (InlineQueryResultId msg))
-              { inlineQueryResultTitle = Just msg,
-                inlineQueryResultInputMessageContent = Just (defaultInputTextMessageContent msg)
-              }
-          thumbnail = defInlineQueryResultGenericThumbnail result
-          article = defInlineQueryResultArticle thumbnail
-          answerInlineQueryRequest = defAnswerInlineQuery queryId [article]
-      _ <- runTG answerInlineQueryRequest
-      return ()
   Publish msg ->
     model <# do
       time <- liftIO Time.zonedString
