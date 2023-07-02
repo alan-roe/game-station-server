@@ -38,7 +38,7 @@ handleAction :: Action -> Model -> Eff Action Model
 handleAction action model = case action of
   Publish msg ->
     model <# do
-      time <- liftIO Time.zonedString
+      time <- liftIO Time.zonedHM
       liftIO $ publish model (pack time <> " <Alan> " <> msg)
   Relay msg ->
     model <# do

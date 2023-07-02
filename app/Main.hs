@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -7,16 +8,16 @@ import Configuration.Dotenv (defaultConfig, loadFile)
 import Control.Concurrent (forkIO, newChan, readChan, threadDelay)
 import Control.Exception (catch)
 import Control.Monad (forever)
+import Data.ByteString (pack)
+import Data.ByteString.Lazy.Char8 qualified as BL
+import Data.IORef (newIORef, writeIORef)
+import Data.Text qualified as Text
+import Fortnite qualified
+import GHC.Exception (SomeException)
+import GHC.IORef (readIORef)
 import Mqtt (startMQTT)
 import Telegram (run)
-import qualified Fortnite
-import Data.ByteString (pack)
-import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.Text as Text
-import Data.IORef (newIORef, writeIORef)
-import GHC.IORef (readIORef)
-import qualified Weather
-import GHC.Exception (SomeException)
+import Weather qualified
 
 main :: IO ()
 main = do
@@ -28,20 +29,20 @@ main = do
   publishF <- startMQTT subMsg
   -- Pass the function to publish messages to MQTT when the bot receives a message
   relayF <- run $ publishF "gstation_to" False
-  
+
   fortniteData <- newIORef Nothing
-  -- Retrieve Fortnite stats every 60 seconds
+  -- Retrieve Fortnite stats every 5 mins
   fortniteThread <- forkIO $ foreverAndEver $ do
-    print "Checking for Fortnite stats..."
+    -- print "Checking for Fortnite stats..."
     prevData <- readIORef fortniteData
     newData <- Fortnite.retrieveStats (publishF "fortnite" True . Text.pack . BL.unpack) prevData
     writeIORef fortniteData $ Just newData
-    threadDelay (1000000 * 60)
+    threadDelay (1000000 * 60 * 5)
 
   weatherData <- newIORef Nothing
   -- Retrieve Weather every 60 seconds
   weatherThread <- forkIO $ foreverAndEver $ do
-    print "Checking for Weather..."
+    -- print "Checking for Weather..."
     prevData <- readIORef weatherData
     newData <- Weather.retrieveWeather (publishF "weather" True . Text.pack . BL.unpack) prevData
     writeIORef weatherData $ Just newData
@@ -50,12 +51,13 @@ main = do
   -- Relay messages from MQTT for Telegram bot to send
   foreverAndEver $ do
     msg <- readChan subMsg
-    print "Relaying message..."
+    -- print "Relaying message..."
     relayF msg
 
 foreverAndEver :: IO () -> IO ()
 foreverAndEver = forever . (`catch` handler)
   where
     handler :: SomeException -> IO ()
-    handler e = do putStrLn $ "ForeverAndError: " ++ show e
-                   threadDelay (1000000 * 60)
+    handler e = do
+      putStrLn $ "ForeverAndError: " ++ show e
+      threadDelay (1000000 * 60)

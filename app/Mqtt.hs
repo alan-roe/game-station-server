@@ -13,13 +13,15 @@ import Network.MQTT.Client
 import Network.MQTT.Topic (mkTopic)
 import Network.URI (parseURI)
 import System.Environment (getEnv)
+import Time qualified
 
 publishMqtt :: MVar MQTTClient -> String -> Bool -> Text -> IO ()
 publishMqtt mcMvar t retain msg = do
   let msgS = unpack msg
   let (Just topic) = mkTopic (pack t)
   mc <- readMVar mcMvar
-  putStrLn ("Publishing to MQTT: " <> msgS)
+  time <- Time.zonedDHM
+  putStrLn (time <> ": Publishing to MQTT: " <> msgS)
   publish mc topic (BL.pack msgS) retain
 
 -- Places any incoming messages into the Chan
@@ -30,7 +32,8 @@ startMQTT subMsg = do
     sendTelegram mc t m p = do
       let msg = BL.unpack m
       writeChan subMsg (pack msg)
-      putStrLn ("Sending Telegram: " <> msg)
+      time <- Time.zonedDHM
+      putStrLn (time <> ": Sending Telegram: " <> msg)
     connect = do
       client <- sub
       mcVar <- newMVar client

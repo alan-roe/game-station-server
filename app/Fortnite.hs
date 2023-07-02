@@ -1,5 +1,5 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -15,6 +15,7 @@ import GHC.Generics (Generic)
 import Network.HTTP.Req
 import System.Environment (getEnv)
 import Text.URI qualified as URI
+import Time qualified
 
 data Account = Account
   { level :: Int,
@@ -77,9 +78,10 @@ retrieveStats publishF maybeResponse = runReq defaultHttpConfig $ do
         <> "account" =: account
   let response = (responseBody jsonResponse :: Response)
   if maybeResponse == Just response || not (result response)
-    then liftIO $ print "No new Fortnite stats"
+    then liftIO $ pure () -- print "No new Fortnite stats"
     else do
-      liftIO $ print "New Fortnite stats"
+      time <- liftIO Time.zonedDHM
+      liftIO $ putStrLn $ time <> ": New Fortnite stats"
       let jsonString = encode response
       liftIO $ publishF jsonString
   return response
