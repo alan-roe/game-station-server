@@ -16,6 +16,7 @@ import qualified Data.Text as Text
 import Data.IORef (newIORef, writeIORef)
 import GHC.IORef (readIORef)
 import qualified Weather
+import GHC.Exception (SomeException)
 
 main :: IO ()
 main = do
@@ -30,7 +31,7 @@ main = do
   
   fortniteData <- newIORef Nothing
   -- Retrieve Fortnite stats every 60 seconds
-  fortniteThread <- forkIO $ forever $ do
+  fortniteThread <- forkIO $ foreverAndEver $ do
     print "Checking for Fortnite stats..."
     prevData <- readIORef fortniteData
     newData <- Fortnite.retrieveStats (publishF "fortnite" True . Text.pack . BL.unpack) prevData
@@ -39,7 +40,7 @@ main = do
 
   weatherData <- newIORef Nothing
   -- Retrieve Weather every 60 seconds
-  weatherThread <- forkIO $ forever $ do
+  weatherThread <- forkIO $ foreverAndEver $ do
     print "Checking for Weather..."
     prevData <- readIORef weatherData
     newData <- Weather.retrieveWeather (publishF "weather" True . Text.pack . BL.unpack) prevData
@@ -47,7 +48,14 @@ main = do
     threadDelay (1000000 * 60)
 
   -- Relay messages from MQTT for Telegram bot to send
-  forever $ do
+  foreverAndEver $ do
     msg <- readChan subMsg
     print "Relaying message..."
     relayF msg
+
+foreverAndEver :: IO () -> IO ()
+foreverAndEver = forever . (`catch` handler)
+  where
+    handler :: SomeException -> IO ()
+    handler e = do putStrLn $ "ForeverAndError: " ++ show e
+                   threadDelay (1000000 * 60)
