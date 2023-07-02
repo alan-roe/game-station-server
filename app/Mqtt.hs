@@ -15,14 +15,15 @@ import Network.MQTT.Topic
 import Network.URI (parseURI)
 import System.Environment (getEnv)
 
-publishMqtt :: MQTTClient -> Text -> IO ()
-publishMqtt mc msg = do
+publishMqtt :: MQTTClient -> String -> Bool -> Text -> IO ()
+publishMqtt mc t retain msg = do
   let msgS = unpack msg
+  let (Just topic) = mkTopic (pack t)
   putStrLn ("Publishing to MQTT: " <> msgS)
-  publish mc "gstation_to" (BL.pack msgS) False
+  publish mc topic (BL.pack msgS) retain
 
 -- Places any incoming messages into the Chan
-startMQTT :: Chan Text -> IO (Text -> IO ())
+startMQTT :: Chan Text -> IO (String -> Bool -> Text -> IO ())
 startMQTT subMsg = do
   publishMqtt <$> connect
   where
