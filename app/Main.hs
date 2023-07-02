@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Text as Text
 import Data.IORef (newIORef, writeIORef)
 import GHC.IORef (readIORef)
+import qualified Weather
 
 main :: IO ()
 main = do
@@ -32,8 +33,17 @@ main = do
   fortniteThread <- forkIO $ forever $ do
     print "Checking for Fortnite stats..."
     prevData <- readIORef fortniteData
-    newData <- Fortnite.retrieveStats (publishF "fortnite/stats" True . Text.pack . BL.unpack) prevData
+    newData <- Fortnite.retrieveStats (publishF "fortnite" True . Text.pack . BL.unpack) prevData
     writeIORef fortniteData $ Just newData
+    threadDelay (1000000 * 60)
+
+  weatherData <- newIORef Nothing
+  -- Retrieve Weather every 60 seconds
+  weatherThread <- forkIO $ forever $ do
+    print "Checking for Weather..."
+    prevData <- readIORef weatherData
+    newData <- Weather.retrieveWeather (publishF "weather" True . Text.pack . BL.unpack) prevData
+    writeIORef weatherData $ Just newData
     threadDelay (1000000 * 60)
 
   -- Relay messages from MQTT for Telegram bot to send

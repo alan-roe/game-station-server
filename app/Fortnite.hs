@@ -3,11 +3,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Fortnite where
 
-import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Maybe (fromJust, isJust)
-import Data.Monoid ((<>))
 import Data.Text (Text, pack)
 import GHC.Generics
 import Network.HTTP.Req
@@ -52,8 +50,6 @@ instance ToJSON Response
 
 retrieveStats :: (BL.ByteString -> IO()) -> Maybe Response -> IO Response
 retrieveStats publishF maybeResponse = runReq defaultHttpConfig $ do
-  -- This is an example of what to do when URL is given dynamically. Of
-  -- course in a real application you may not want to use 'fromJust'.
   url <- liftIO $ getEnv "FORTNITE_API_URL"
   uri <- URI.mkURI $ pack url
   let (url, options) = fromJust (useHttpsURI uri)
