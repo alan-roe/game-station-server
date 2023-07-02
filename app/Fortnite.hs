@@ -26,6 +26,11 @@ data Stats = Stats
   , placetop1 :: Int
   , matchesplayed :: Int
   , placetop25 :: Int
+  , placetop12 :: Int
+  , placetop10 :: Int
+  , placetop6 :: Int
+  , placetop5 :: Int
+  , placetop3 :: Int
   } deriving (Show, Generic, Eq)
 
 data GlobalStats = GlobalStats
