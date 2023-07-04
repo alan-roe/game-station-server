@@ -78,10 +78,10 @@ retrieveStats publishF maybeResponse = runReq defaultHttpConfig $ do
         <> "account" =: account
   let response = (responseBody jsonResponse :: Response)
   if maybeResponse == Just response || not (result response)
-    then liftIO $ pure () -- print "No new Fortnite stats"
+    then return $ fromJust maybeResponse -- print "No new Fortnite stats"
     else do
       time <- liftIO Time.zonedDHM
-      liftIO $ putStrLn $ time <> ": New Fortnite stats"
+      liftIO $ putStrLn $ time <> ": New Fortnite stats\nOld: " <> show maybeResponse <> "\nNew: " <> show response
       let jsonString = encode response
       liftIO $ publishF jsonString
-  return response
+      return response
